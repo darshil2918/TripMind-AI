@@ -49,8 +49,35 @@ logistics_task = Task(
 )
 
 activity_task = Task(
-    description='Create a 3-day itinerary for {destination} that balances activities for teenagers, parents, and a 5-year-old.',
-    expected_output='A day-by-day markdown itinerary including activities and food.',
+    description='Create a detailed daily itinerary for {destination} covering the dates: {travel_dates}. Balance activities for the group. YOU MUST RETURN ONLY A VALID JSON ARRAY.',
+    expected_output='''A strict JSON array of objects, one for each day. Do not include markdown like ```json. Each day object MUST have this exact structure:
+    {
+      "id": "d1",
+      "day": 1,
+      "city": "Name of City",
+      "theme": "Theme of the day",
+      "highlights": ["Highlight 1", "Highlight 2"],
+      "weather": "string, MUST be strictly 'sun' or 'cloud' based on forecast",
+      "temp": "string, forecasted temperature (e.g., '22°' or '15°')",
+      "timeline": [
+        { "id": "b1", "time": "09:00", "title": "Breakfast", "place": "Local Cafe Name", "duration": "1h", "type": "meal" }
+      ],
+      "hidden_gems": [
+        { "title": "Name of Hidden Gem", "subtitle": "Short description or distance" }
+      ],
+      "utilities": [
+        { "name": "Local Pharmacy or Supermarket", "meta": "On route - 5 min walk" }
+      ],
+      "stays": [
+        { "name": "Name of Hotel or Accommodation", "area": "Neighborhood", "price": "$150", "tag": "Best location", "rating": 4.8 }
+      ],
+      "transit": [
+        { "label": "Local Transit Option", "price": "$15", "deal": "Day pass" }
+      ],
+      "dining": [
+        { "name": "Restaurant Name", "tags": ["Cuisine", "Vibe"], "distance": "2 km", "price": "$$" }
+      ]
+    }''',
     agent=experience_coordinator
 )
 
@@ -66,7 +93,7 @@ weather_task = Task(
 def generate_trip_plan(group_details, destination, budget, travel_dates):
     trip_crew = Crew(
         agents=[demographic_profiler, logistics_manager, experience_coordinator, meteorologist],
-        tasks=[profile_task, logistics_task, activity_task, weather_task],
+        tasks=[profile_task, logistics_task, weather_task, activity_task],
         process=Process.sequential  # They work in order, passing notes to each other
     )
 
