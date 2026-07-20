@@ -1,15 +1,35 @@
 import os
 from dotenv import load_dotenv
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Task, Crew, Process, LLM
 
 # This loads your Groq API key securely from the .env file
 load_dotenv()
+
+# --- WORKAROUND for a known crewai bug (GitHub issue #5886, still open) ---
+# Recent crewai versions tag every message with a "cache_breakpoint" field meant
+# for Anthropic's prompt caching. Only the Anthropic provider knows how to strip
+# it before sending to the API — Groq (and OpenAI-compatible providers) reject
+# the request outright because they don't recognize that field.
+# This line disables the tagging so clean messages get sent to Groq.
+import crewai.llms.cache as _crewai_cache
+_crewai_cache.mark_cache_breakpoint = lambda msg: msg
+
+# This is the actual LLM connection that was missing before.
+# It reads GROQ_API_KEY from .env and tells every agent to use Groq's
+# hosted Llama model instead of silently defaulting to OpenAI (which you don't have a key for).
+groq_llm = LLM(
+    model="groq/llama-3.3-70b-versatile",
+    api_key=os.getenv("GROQ_API_KEY"),
+    temperature=0.7
+)
+
 # --- 1. THE AGENTS ---
 
 demographic_profiler = Agent(
     role='Family Dynamics Specialist',
     goal='Analyze the group composition to identify specific constraints, energy levels, and needs.',
     backstory='You are an expert in family psychology and group travel. You know exactly what a 5-year-old needs versus a 60-year-old.',
+    llm=groq_llm,
     verbose=True
 )
 
@@ -17,6 +37,7 @@ logistics_manager = Agent(
     role='Budget & Transport Director',
     goal='Find the best transport and accommodation that fits the fixed budget and the family constraints.',
     backstory='You are a frugal but clever travel agent. You know how to stretch a budget without sacrificing comfort.',
+    llm=groq_llm,
     verbose=True
 )
 
@@ -24,6 +45,7 @@ experience_coordinator = Agent(
     role='Activity & Culinary Planner',
     goal='Create a daily itinerary with age-appropriate activities and local food options.',
     backstory='You are a local tour guide who knows the best spots that are both child-friendly and engaging for teenagers.',
+    llm=groq_llm,
     verbose=True
 )
 
@@ -31,6 +53,7 @@ meteorologist = Agent(
     role='Weather & Preparation Expert',
     goal='Analyze expected weather for the dates and provide exact packing advice.',
     backstory='You are a veteran traveler and meteorologist who makes sure nobody is ever underprepared for the climate.',
+    llm=groq_llm,
     verbose=True
 )
 
