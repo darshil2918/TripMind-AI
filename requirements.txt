@@ -1,4 +1,7 @@
 crewai
-langchain-openai
-python-dotenv
+fastapi
+uvicorn
 streamlit
+python-dotenv
+pydantic
+langchain-openai
